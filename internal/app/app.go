@@ -9,6 +9,7 @@ import (
 
 	"github.com/mdombrov-33/go-api-fm/internal/api"
 	"github.com/mdombrov-33/go-api-fm/internal/store"
+	"github.com/mdombrov-33/go-api-fm/migrations"
 )
 
 type Application struct {
@@ -21,6 +22,11 @@ func NewApplication() (*Application, error) {
 	pgDB, err := store.Open()
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
+	}
+
+	err = store.MigrateFS(pgDB, migrations.FS, ".")
+	if err != nil {
+		panic(err)
 	}
 
 	logger := log.New((os.Stdout), "", log.Ldate|log.Ltime)
