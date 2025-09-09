@@ -12,18 +12,18 @@ import (
 func setupTestDB(t *testing.T) *sql.DB {
 	db, err := sql.Open("pgx", "host=localhost user=postgres password=postgres dbname=postgres port=5433 sslmode=disable")
 	if err != nil {
-		t.Fatal("opening test db: %v", err)
+		t.Fatalf("opening test db: %v", err)
 	}
 
 	// run migrations for test db
 	err = Migrate(db, "../../migrations")
 	if err != nil {
-		t.Fatal("migrating test db: %v", err)
+		t.Fatalf("migrating test db: %v", err)
 	}
 
 	_, err = db.Exec(`TRUNCATE workouts, workout_entries CASCADE`)
 	if err != nil {
-		t.Fatal("truncating test db: %v", err)
+		t.Fatalf("truncating test db: %v", err)
 	}
 
 	return db
@@ -108,7 +108,7 @@ func TestCreateWorkout(t *testing.T) {
 			assert.Equal(t, createdWorkout.ID, retrieved.ID)
 			assert.Equal(t, len(tt.workout.Entries), len(retrieved.Entries))
 
-			for i, _ := range retrieved.Entries {
+			for i := range retrieved.Entries {
 				assert.Equal(t, tt.workout.Entries[i].ExerciseName, retrieved.Entries[i].ExerciseName)
 				assert.Equal(t, tt.workout.Entries[i].Sets, retrieved.Entries[i].Sets)
 				assert.Equal(t, tt.workout.Entries[i].Reps, retrieved.Entries[i].Reps)
