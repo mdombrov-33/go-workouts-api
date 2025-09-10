@@ -1,11 +1,14 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
+	"net/http"
 	"regexp"
 
 	"github.com/mdombrov-33/go-api-fm/internal/store"
+	"github.com/mdombrov-33/go-api-fm/internal/utils"
 )
 
 type registerUserRequest struct {
@@ -52,4 +55,49 @@ func (h *UserHandler) validateRegisterRequest(req *registerUserRequest) error {
 	}
 
 	return nil
+}
+
+func (h *UserHandler) HandleRegisterUser(w http.ResponseWriter, r *http.Request) {
+	var req registerUserRequest
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		h.logger.Printf("ERROR: decoding register request: %v", err)
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request payload"})
+		return
+	}
+
+	err = h.validateRegisterRequest(&req)
+
+	if err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": err.Error()})
+		return
+	}
+
+	user := &store.User{
+		Username: req.Username,
+		Email:    req.Email,
+	}
+
+	if req.Bio != "" {
+		user.Bio = req.Bio
+	}
+
+	// what to do with passwords?
+	err = user.PasswordHash.Set(req.Password)
+	if err != nil {
+		h.logger.Printf("ERROR: hashing password: %v", err)
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		return
+	}
+
+	err = h.userStore.CreateUser(user)
+	if err != nil {
+		h.logger.Printf("ERROR: creating user: %v", err)
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "internal server error"})
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusCreated, utils.Envelope{"user": user})
+
 }
