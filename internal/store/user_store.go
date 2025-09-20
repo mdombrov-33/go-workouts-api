@@ -51,7 +51,7 @@ type User struct {
 
 var AnonymousUser = &User{}
 
-func (u *User) isAnonymous() bool {
+func (u *User) IsAnonymous() bool {
 	return u == AnonymousUser
 }
 
